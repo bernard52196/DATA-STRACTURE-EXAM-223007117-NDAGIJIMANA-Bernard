@@ -1,5 +1,7 @@
 Ex1:
 This C++ program starts with #include<iostream>, which allows the use of input and output functions like cout. The line using namespace std; simplifies the code by eliminating the need to prefix standard functions with std::. The execution begins in the main() function, where cout<<"Hello, World!"<<endl; prints the message "Hello, World!" to the console, with endl ensuring the cursor moves to the next line. Finally, return 0; signifies that the program executed successful.
+
+
 Ex2:
 This C++ program demonstrates variable declaration and data types. It includes #include <iostream> for input-output functionality and using namespace std; to simplify standard library usage. Inside main(), four variables are declared: int age = 23; for storing whole numbers, double price = 17.88; for decimal values, char grade = 'A'; for single characters, and string name = "Ange"; for text. The cout statements print these values to the console, displaying the name, age, price, and grade. Finally, return 0; signifies successful program execution.
 
