@@ -2,12 +2,12 @@
 using namespace std;
 int main(){
     
-int a = 20, b = 2;
-cout << "Sum: " << a + b << endl;
-cout << "Difference: " << a - b << endl;
-cout << "Product: " << a * b << endl;
-cout << "Quotient: " << a / b << endl;
-cout << "Remainder: " << a % b << endl;
+int c = 20, d = 2;
+cout << "Sum: " << c + d << endl;
+cout << "Difference: " << c - d << endl;
+cout << "Product: " << c * d << endl;
+cout << "Quotient: " << c / d << endl;
+cout << "Remainder: " << c % d << endl;
 
 return 0;
 
