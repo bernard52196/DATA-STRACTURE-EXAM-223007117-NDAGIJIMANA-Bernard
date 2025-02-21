@@ -9,7 +9,7 @@ Ex3:
 This C++ program demonstrates user input handling. It includes #include <iostream> for input-output functionality and using namespace std; to simplify code. Inside main(), two variables, string name; and int age;, are declared to store user input. The cout statements prompt the user to enter their name and age, which are captured using cin >> name; and cin >> age;. Finally, cout prints a personalized message using the input values. The program ends with return 0;, indicating successful execution.
 
 Ex4:
-This C++ program performs basic arithmetic operations. It starts with #include<iostream> for input-output functionality and using namespace std; to simplify standard library usage. Inside main(), two integer variables, a = 20; and b = 2;, are declared. The cout statements then print the results of arithmetic operations: addition (a + b), subtraction (a - b), multiplication (a * b), division (a / b), and modulus (a % b), which gives the remainder. Finally, return 0;  : This indicates that the program finished successfully.
+This C++ program performs basic arithmetic operations. It starts with #include<iostream> for input-output functionality and using namespace std; to simplify standard library usage. Inside main(), two integer variables, c = 20; and d = 2;, are declared. The cout statements then print the results of arithmetic operations: addition (c + d), subtraction (c - d), multiplication (c * d), division (c / d), and modulus (c % d), which gives the remainder. Finally, return 0;  : This indicates that the program finished successfully.
 
 
 
