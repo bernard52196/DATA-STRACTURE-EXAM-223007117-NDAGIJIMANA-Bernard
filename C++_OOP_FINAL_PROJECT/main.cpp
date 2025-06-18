@@ -4,7 +4,6 @@
 #include <thread>
 #include <chrono>
 
-// ✅ Forward declaration to avoid scope error
 int getValidInput();
 
 // State structure
@@ -70,7 +69,6 @@ public:
     }
 };
 
-// Pedestrian Traffic Light
 class PedestrianTrafficLight : public TrafficLightBase {
 public:
     PedestrianTrafficLight(int dontWalkDuration = 30, int walkDuration = 20) {
@@ -100,7 +98,6 @@ public:
     }
 };
 
-// Traffic Light Manager
 class TrafficLightManager {
 private:
     TrafficLightBase** controllers;
@@ -188,7 +185,6 @@ public:
     }
 };
 
-// ✅ Valid integer input helper function
 int getValidInput() {
     int input;
     while (!(std::cin >> input) || input <= 0) {
@@ -199,7 +195,7 @@ int getValidInput() {
     return input;
 }
 
-// ✅ Main menu
+//  Main menu
 void displayMenu() {
     std::cout << "\nTraffic Light Manager Menu\n";
     std::cout << "--------------------------\n";
