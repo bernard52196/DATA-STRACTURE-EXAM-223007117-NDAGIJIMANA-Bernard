@@ -1,64 +1,128 @@
 package ui;
 
-import dao.UserDAO;
-import model.User;
+import dao.*;
+import model.*;
+import util.DBConnection;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class LoginFrame extends JFrame {
-    private final JTextField usernameField = new JTextField();
-    private final JPasswordField passwordField = new JPasswordField();
+    private final JTextField txtUsername = new JTextField(18);
+    private final JPasswordField txtPassword = new JPasswordField(18);
+    private final JComboBox<String> cmbRole = new JComboBox<>(new String[]{"Admin","Doctor","Patient"});
+    private final UserDAO userDAO = new UserDAO();
 
     public LoginFrame() {
-        setTitle("Healthcare Portal - System");
-        setSize(420, 220);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setResizable(false);
+        setTitle("Healthcare Portal - Login");
+        setSize(420, 300);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        JPanel panel = new JPanel(new GridLayout(4,2,8,8));
-        panel.setBorder(BorderFactory.createEmptyBorder(12,12,12,12));
-        panel.add(new JLabel("Username:"));
-        panel.add(usernameField);
-        panel.add(new JLabel("Password:"));
-        panel.add(passwordField);
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setBorder(BorderFactory.createEmptyBorder(12,12,12,12));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6,6,6,6);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JButton loginBtn = new JButton("Login");
-        JButton registerBtn = new JButton("Register");
-        panel.add(loginBtn);
-        panel.add(registerBtn);
+        JLabel lblTitle = new JLabel("WELCOME TO HEALTHCARE PORTAL SYSTEM", SwingConstants.CENTER);
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 14));
+        gbc.gridx=0; gbc.gridy=0; gbc.gridwidth=2;
+        p.add(lblTitle, gbc);
+        gbc.gridwidth=1;
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 16));
+        lblTitle.setForeground(new Color(0, 102, 204));
+        gbc.gridx=0; gbc.gridy=0; gbc.gridwidth=2;
+        p.add(lblTitle, gbc);
+        gbc.gridwidth=1;
 
-        add(panel);
-        loginBtn.addActionListener(e -> doLogin());
-        registerBtn.addActionListener(e -> new RegisterFrame());
 
-        setVisible(true);
+        gbc.gridy++; gbc.gridx=0; p.add(new JLabel("Username:"), gbc);
+        gbc.gridx=1; p.add(txtUsername, gbc);
+
+        gbc.gridy++; gbc.gridx=0; p.add(new JLabel("Password:"), gbc);
+        gbc.gridx=1; p.add(txtPassword, gbc);
+
+        gbc.gridy++; gbc.gridx=0; p.add(new JLabel("Role:"), gbc);
+        gbc.gridx=1; p.add(cmbRole, gbc);
+
+        gbc.gridy++; gbc.gridx=0; gbc.gridwidth=2;
+        JPanel bp = new JPanel();
+        JButton btnLogin = new JButton("Login");
+        JButton btnRegister = new JButton("Register");
+        bp.add(btnLogin); bp.add(btnRegister);
+        btnLogin.setBackground(new Color(69, 181, 124));
+        btnLogin.setForeground(Color.WHITE); // White text
+        btnLogin.setFocusPainted(false);
+        btnRegister.setBackground(new Color(19, 151, 168));
+        btnRegister.setForeground(Color.WHITE);
+        btnRegister.setFocusPainted(false);
+
+        bp.add(btnLogin);
+        bp.add(btnRegister);
+        p.add(bp, gbc);
+
+
+        p.add(bp, gbc);
+
+        add(p);
+
+        btnLogin.addActionListener(e -> doLogin());
+        btnRegister.addActionListener(e -> {
+            dispose(); new RegisterFrame().setVisible(true);
+        });
     }
 
     private void doLogin() {
-        String username = usernameField.getText().trim();
-        String password = new String(passwordField.getPassword()).trim();
-        if (username.isEmpty() || password.isEmpty()) { JOptionPane.showMessageDialog(this,"Enter username & password"); return; }
+        String username = txtUsername.getText().trim();
+        String password = new String(txtPassword.getPassword());
+        String role = cmbRole.getSelectedItem().toString();
 
-        UserDAO udao = new UserDAO();
-        User user = udao.getByUsername(username);
-        if (user != null && user.getPasswordHash().equals(password)) {
-            udao.updateLastLogin(username);
-            JOptionPane.showMessageDialog(this, "Welcome " + user.getFullName());
-            dispose();
-            switch (user.getRole()) {
-                case "ADMIN": new AdminDashboard(user); break;
-                case "DOCTOR": new DoctorDashboard(user); break;
-                case "PATIENT": new PatientDashboard(user); break;
-                default: JOptionPane.showMessageDialog(this,"Unknown role");
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter credentials");
+            return;
+        }
+
+        User u = userDAO.authenticateUser(username, password);
+        if (u == null) {
+            JOptionPane.showMessageDialog(this, "Invalid credentials");
+            return;
+        }
+        if (!u.getRole().equalsIgnoreCase(role)) {
+            JOptionPane.showMessageDialog(this, "Role mismatch. You are: " + u.getRole());
+            return;
+        }
+
+        JOptionPane.showMessageDialog(this, "Welcome " + u.getFullName());
+        dispose();
+
+        switch (u.getRole().toLowerCase()) {
+            case "admin" -> new AdminDashboard(u).setVisible(true);
+            case "doctor" -> {
+                DoctorDAO ddao = new DoctorDAO();
+                Doctor d = ddao.getByUserId(u.getUserID());
+                if (d == null) {
+                    JOptionPane.showMessageDialog(this, "No doctor profile found. Contact admin.");
+                    new AdminDashboard(u).setVisible(true);
+                } else {
+                    new DoctorDashboard(u, d).setVisible(true);
+                }
             }
-        } else {
-            JOptionPane.showMessageDialog(this,"Invalid credentials!");
+            case "patient" -> {
+                PatientDAO pdao = new PatientDAO();
+                Patient p = pdao.getByUserId(u.getUserID());
+                if (p == null) {
+                    JOptionPane.showMessageDialog(this, "No patient profile found. Contact admin.");
+                    new AdminDashboard(u).setVisible(true);
+                } else {
+                    new PatientDashboard(u, p).setVisible(true);
+                }
+            }
+            default -> JOptionPane.showMessageDialog(this, "Unknown role");
         }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(LoginFrame::new);
+        SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));
     }
 }

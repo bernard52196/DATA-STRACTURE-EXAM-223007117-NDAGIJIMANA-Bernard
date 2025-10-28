@@ -1,80 +1,149 @@
 package ui;
 
-import dao.UserDAO;
-import model.User;
+import dao.*;
+import model.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.sql.Date;
 
 public class RegisterFrame extends JFrame {
-    private final JTextField fullName = new JTextField();
-    private final JTextField username = new JTextField();
-    private final JTextField email = new JTextField();
-    private final JPasswordField password = new JPasswordField();
-    private final JComboBox<String> roleBox = new JComboBox<>(new String[]{"PATIENT","DOCTOR","ADMIN"});
+    private final JTextField tfUsername = new JTextField(20);
+    private final JPasswordField pf = new JPasswordField(20);
+    private final JTextField tfEmail = new JTextField(20);
+    private final JTextField tfFull = new JTextField(20);
 
     public RegisterFrame() {
-        setTitle("Register New User");
-        setSize(400,320);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setTitle("Register - Healthcare Portal");
+        setSize(520, 480);
         setLocationRelativeTo(null);
-        setLayout(new GridLayout(6,2,8,8));
-        add(new JLabel("Full name:")); add(fullName);
-        add(new JLabel("Username:")); add(username);
-        add(new JLabel("Email:")); add(email);
-        add(new JLabel("Password:")); add(password);
-        add(new JLabel("Role:")); add(roleBox);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        JButton ok = new JButton("Register");
-        JButton cancel = new JButton("Cancel");
-        add(ok); add(cancel);
+        JPanel main = new JPanel(new GridBagLayout());
+        main.setBorder(BorderFactory.createEmptyBorder(12,12,12,12));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8,8,8,8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        ok.addActionListener(e -> register());
-        cancel.addActionListener(e -> dispose());
+        // Title Styling
+        JLabel lblTitle = new JLabel("REGISTER TO HEALTHCARE PORTAL SYSTEM", SwingConstants.CENTER);
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
+        lblTitle.setForeground(new Color(0, 102, 204)); // Blue Color
+        gbc.gridx=0; gbc.gridy=0; gbc.gridwidth=2;
+        main.add(lblTitle, gbc);
+        gbc.gridwidth=1;
 
-        setVisible(true);
+        gbc.gridy++; gbc.gridx=0; main.add(new JLabel("Username:"), gbc);
+        gbc.gridx=1; main.add(tfUsername, gbc);
+
+        gbc.gridy++; gbc.gridx=0; main.add(new JLabel("Password:"), gbc);
+        gbc.gridx=1; main.add(pf, gbc);
+
+        gbc.gridy++; gbc.gridx=0; main.add(new JLabel("Email:"), gbc);
+        gbc.gridx=1; main.add(tfEmail, gbc);
+
+        gbc.gridy++; gbc.gridx=0; main.add(new JLabel("Full Name:"), gbc);
+        gbc.gridx=1; main.add(tfFull, gbc);
+
+        // Buttons Styled
+        gbc.gridy++;
+        JButton btnDoctor = new JButton("Register as Doctor");
+        btnDoctor.setBackground(new Color(0, 153, 76)); // Green
+        btnDoctor.setForeground(Color.WHITE);
+        btnDoctor.setFocusPainted(false);
+
+        JButton btnPatient = new JButton("Register as Patient");
+        btnPatient.setBackground(new Color(204, 102, 0)); // Orange-Brown
+        btnPatient.setForeground(Color.WHITE);
+        btnPatient.setFocusPainted(false);
+
+        JPanel rolePanel = new JPanel();
+        rolePanel.add(btnDoctor);
+        rolePanel.add(btnPatient);
+        gbc.gridx=0; gbc.gridwidth=2;
+        main.add(rolePanel, gbc);
+        gbc.gridwidth=1;
+
+        gbc.gridy++;
+        JButton btnBack = new JButton("Back to Login");
+        btnBack.setBackground(new Color(220, 54, 54)); // Red
+        btnBack.setForeground(Color.WHITE);
+        btnBack.setFocusPainted(false);
+        main.add(btnBack, gbc);
+
+        add(main);
+
+        // Button Click Actions
+        btnDoctor.addActionListener(e -> registerDoctor());
+        btnPatient.addActionListener(e -> registerPatient());
+        btnBack.addActionListener(e -> {
+            dispose(); new LoginFrame().setVisible(true);
+        });
     }
 
-    private void register() {
-        String nm = fullName.getText().trim();
-        String user = username.getText().trim();
-        String em = email.getText().trim();
-        String pass = new String(password.getPassword()).trim();
-        String role = (String) roleBox.getSelectedItem();
+    private void registerDoctor() {
+        String username = tfUsername.getText().trim();
+        String password = new String(pf.getPassword());
+        String email = tfEmail.getText().trim();
+        String full = tfFull.getText().trim();
 
-        if (nm.isEmpty() || user.isEmpty() || pass.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Full name, username and password are required");
+        JTextField location = new JTextField();
+        JTextField identifier = new JTextField();
+        Object[] form = {"Identifier:", identifier, "Location:", location};
+        int ok = JOptionPane.showConfirmDialog(this, form, "Doctor Details", JOptionPane.OK_CANCEL_OPTION);
+        if (ok != JOptionPane.OK_OPTION) return;
+
+        if (username.isEmpty() || password.isEmpty() || full.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill all fields!");
             return;
         }
 
         UserDAO udao = new UserDAO();
-        User u = new User();
-        u.setUsername(user);
-        u.setPasswordHash(pass);
-        u.setEmail(em);
-        u.setFullName(nm);
-        u.setRole(role);
+        int userId = udao.registerUser(username, password, email, full, "Doctor");
+        if (userId <= 0) { JOptionPane.showMessageDialog(this, "Registration failed"); return; }
 
-        boolean ok = udao.addUser(u);
-        if (!ok) {
-            JOptionPane.showMessageDialog(this, "Registration failed (maybe username exists).");
+        DoctorDAO ddao = new DoctorDAO();
+        Doctor d = new Doctor();
+        d.setUserID(userId);
+        d.setName(full);
+        d.setIdentifier(identifier.getText().trim());
+        d.setStatus("Active");
+        d.setLocation(location.getText().trim());
+        d.setContact(email);
+        d.setAssignedSince(new Date(System.currentTimeMillis()));
+        ddao.add(d);
+
+        JOptionPane.showMessageDialog(this, "Doctor registered successfully!");
+        dispose(); new LoginFrame().setVisible(true);
+    }
+
+    private void registerPatient() {
+        String username = tfUsername.getText().trim();
+        String password = new String(pf.getPassword());
+        String email = tfEmail.getText().trim();
+        String full = tfFull.getText().trim();
+
+        JTextField gender = new JTextField();
+        JTextField dob = new JTextField("YYYY-MM-DD");
+        Object[] form = {"Gender:", gender, "Date of Birth:", dob};
+        int ok = JOptionPane.showConfirmDialog(this, form, "Patient Details", JOptionPane.OK_CANCEL_OPTION);
+        if (ok != JOptionPane.OK_OPTION) return;
+
+        if (username.isEmpty() || password.isEmpty() || full.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill all fields!");
             return;
         }
 
-        // create patient or doctor rows in their tables when appropriate
-        if ("PATIENT".equals(role)) {
-            try (var conn = db.DatabaseConnection.getConnection();
-                 var ps = conn.prepareStatement("INSERT IGNORE INTO patient (username, full_name, email) VALUES (?, ?, ?)")) {
-                ps.setString(1, user); ps.setString(2, nm); ps.setString(3, em); ps.executeUpdate();
-            } catch (Exception ex) { ex.printStackTrace(); }
-        } else if ("DOCTOR".equals(role)) {
-            try (var conn = db.DatabaseConnection.getConnection();
-                 var ps = conn.prepareStatement("INSERT IGNORE INTO doctor (username, full_name, email) VALUES (?, ?, ?)")) {
-                ps.setString(1, user); ps.setString(2, nm); ps.setString(3, em); ps.executeUpdate();
-            } catch (Exception ex) { ex.printStackTrace(); }
-        }
+        UserDAO udao = new UserDAO();
+        int userId = udao.registerUser(username, password, email, full, "Patient");
+        if (userId <= 0) { JOptionPane.showMessageDialog(this, "Registration failed"); return; }
 
-        JOptionPane.showMessageDialog(this, "Registered successfully");
-        dispose();
+        PatientDAO pdao = new PatientDAO();
+        Date dobDate = null;
+        try { dobDate = Date.valueOf(dob.getText().trim()); } catch (Exception ex) { /* allow null */ }
+        pdao.addProfile(userId, full, gender.getText().trim(), dobDate);
+
+        JOptionPane.showMessageDialog(this, "Patient registered successfully!");
+        dispose(); new LoginFrame().setVisible(true);
     }
 }

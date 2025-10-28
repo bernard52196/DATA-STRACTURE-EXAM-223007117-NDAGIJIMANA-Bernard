@@ -1,7 +1,7 @@
 package dao;
 
-import db.DatabaseConnection;
 import model.Appointment;
+import util.DBConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -9,99 +9,108 @@ import java.util.List;
 
 public class AppointmentDAO {
 
-    public boolean addAppointment(Appointment a) {
-        String sql = "INSERT INTO appointment (patient_username, doctor_username, appointment_date, status, notes) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, a.getPatientUsername());
-            ps.setString(2, a.getDoctorUsername());
-            ps.setTimestamp(3, a.getAppointmentDate());
-            ps.setString(4, a.getStatus());
-            ps.setString(5, a.getNotes());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException ex) { ex.printStackTrace(); return false; }
+    public int add(Appointment a) {
+        String sql = "INSERT INTO Appointment (OrderNumber, PatientID, DoctorID, AppointmentDate, Status, TotalAmount, PaymentMethod, Notes) VALUES (?,?,?,?,?,?,?,?)";
+        try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, a.getOrderNumber());
+            ps.setInt(2, a.getPatientID());
+            ps.setInt(3, a.getDoctorID());
+            ps.setTimestamp(4, a.getAppointmentDate());
+            ps.setString(5, a.getStatus());
+            ps.setDouble(6, a.getTotalAmount());
+            ps.setString(7, a.getPaymentMethod());
+            ps.setString(8, a.getNotes());
+            ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) { e.printStackTrace(); }
+        return -1;
     }
 
-    public List<Appointment> getAppointmentsForPatient(String patientUsername) {
-        List<Appointment> out = new ArrayList<>();
-        String sql = "SELECT * FROM appointment WHERE patient_username = ? ORDER BY appointment_date DESC";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, patientUsername);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Appointment a = new Appointment();
-                    a.setAppointmentId(rs.getInt("appointment_id"));
-                    a.setPatientUsername(rs.getString("patient_username"));
-                    a.setDoctorUsername(rs.getString("doctor_username"));
-                    a.setAppointmentDate(rs.getTimestamp("appointment_date"));
-                    a.setStatus(rs.getString("status"));
-                    a.setNotes(rs.getString("notes"));
-                    out.add(a);
-                }
-            }
-        } catch (SQLException ex) { ex.printStackTrace(); }
-        return out;
-    }
-
-    public List<Appointment> getAppointmentsForDoctor(String doctorUsername) {
-        List<Appointment> out = new ArrayList<>();
-        String sql = "SELECT * FROM appointment WHERE doctor_username = ? ORDER BY appointment_date DESC";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, doctorUsername);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Appointment a = new Appointment();
-                    a.setAppointmentId(rs.getInt("appointment_id"));
-                    a.setPatientUsername(rs.getString("patient_username"));
-                    a.setDoctorUsername(rs.getString("doctor_username"));
-                    a.setAppointmentDate(rs.getTimestamp("appointment_date"));
-                    a.setStatus(rs.getString("status"));
-                    a.setNotes(rs.getString("notes"));
-                    out.add(a);
-                }
-            }
-        } catch (SQLException ex) { ex.printStackTrace(); }
-        return out;
-    }
-
-    public List<Appointment> getAllAppointments() {
-        List<Appointment> out = new ArrayList<>();
-        String sql = "SELECT * FROM appointment ORDER BY appointment_date DESC";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+    public List<Appointment> getAll() {
+        List<Appointment> list = new ArrayList<>();
+        String sql = "SELECT * FROM Appointment ORDER BY AppointmentDate DESC";
+        try (Connection c = DBConnection.getConnection(); Statement st = c.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
                 Appointment a = new Appointment();
-                a.setAppointmentId(rs.getInt("appointment_id"));
-                a.setPatientUsername(rs.getString("patient_username"));
-                a.setDoctorUsername(rs.getString("doctor_username"));
-                a.setAppointmentDate(rs.getTimestamp("appointment_date"));
-                a.setStatus(rs.getString("status"));
-                a.setNotes(rs.getString("notes"));
-                out.add(a);
+                a.setAppointmentID(rs.getInt("AppointmentID"));
+                a.setOrderNumber(rs.getString("OrderNumber"));
+                a.setPatientID(rs.getInt("PatientID"));
+                a.setDoctorID(rs.getInt("DoctorID"));
+                a.setAppointmentDate(rs.getTimestamp("AppointmentDate"));
+                a.setStatus(rs.getString("Status"));
+                a.setTotalAmount(rs.getDouble("TotalAmount"));
+                a.setPaymentMethod(rs.getString("PaymentMethod"));
+                a.setNotes(rs.getString("Notes"));
+                a.setCreatedAt(rs.getTimestamp("CreatedAt"));
+                list.add(a);
             }
-        } catch (SQLException ex) { ex.printStackTrace(); }
-        return out;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
-    public boolean updateAppointmentStatus(int appointmentId, String status) {
-        String sql = "UPDATE appointment SET status = ? WHERE appointment_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status);
-            ps.setInt(2, appointmentId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException ex) { ex.printStackTrace(); return false; }
+    public List<Appointment> getByDoctor(int doctorId) {
+        List<Appointment> list = new ArrayList<>();
+        String sql = "SELECT * FROM Appointment WHERE DoctorID=? ORDER BY AppointmentDate DESC";
+        try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, doctorId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Appointment a = new Appointment();
+                a.setAppointmentID(rs.getInt("AppointmentID"));
+                a.setOrderNumber(rs.getString("OrderNumber"));
+                a.setPatientID(rs.getInt("PatientID"));
+                a.setDoctorID(rs.getInt("DoctorID"));
+                a.setAppointmentDate(rs.getTimestamp("AppointmentDate"));
+                a.setStatus(rs.getString("Status"));
+                a.setTotalAmount(rs.getDouble("TotalAmount"));
+                a.setPaymentMethod(rs.getString("PaymentMethod"));
+                a.setNotes(rs.getString("Notes"));
+                a.setCreatedAt(rs.getTimestamp("CreatedAt"));
+                list.add(a);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
-    public boolean deleteAppointment(int appointmentId) {
-        String sql = "DELETE FROM appointment WHERE appointment_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, appointmentId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException ex) { ex.printStackTrace(); return false; }
+    public List<Appointment> getByPatient(int patientId) {
+        List<Appointment> list = new ArrayList<>();
+        String sql = "SELECT * FROM Appointment WHERE PatientID=? ORDER BY AppointmentDate DESC";
+        try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, patientId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Appointment a = new Appointment();
+                a.setAppointmentID(rs.getInt("AppointmentID"));
+                a.setOrderNumber(rs.getString("OrderNumber"));
+                a.setPatientID(rs.getInt("PatientID"));
+                a.setDoctorID(rs.getInt("DoctorID"));
+                a.setAppointmentDate(rs.getTimestamp("AppointmentDate"));
+                a.setStatus(rs.getString("Status"));
+                a.setTotalAmount(rs.getDouble("TotalAmount"));
+                a.setPaymentMethod(rs.getString("PaymentMethod"));
+                a.setNotes(rs.getString("Notes"));
+                a.setCreatedAt(rs.getTimestamp("CreatedAt"));
+                list.add(a);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    public void updateStatus(int id, String newStatus) {
+        String sql = "UPDATE Appointment SET Status=? WHERE AppointmentID=?";
+        try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, newStatus);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    public void delete(int id) {
+        String sql = "DELETE FROM Appointment WHERE AppointmentID=?";
+        try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 }

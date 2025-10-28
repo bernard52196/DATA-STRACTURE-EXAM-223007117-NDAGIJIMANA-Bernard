@@ -1,152 +1,55 @@
 package dao;
 
-import db.DatabaseConnection;
 import model.User;
+import util.DBConnection;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class UserDAO {
 
-    public User getByUsername(String username) {
-        String sql = "SELECT * FROM users WHERE username = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+    public int registerUser(String username, String password, String email, String fullName, String role) {
+        String sql = "INSERT INTO User (Username, PasswordHash, Email, FullName, Role) VALUES (?,?,?,?,?)";
+        try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, username);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    User u = new User();
-                    u.setUserId(rs.getInt("user_id"));
-                    u.setUsername(rs.getString("username"));
-                    u.setPasswordHash(rs.getString("password_hash"));
-                    u.setEmail(rs.getString("email"));
-                    u.setFullName(rs.getString("full_name"));
-                    u.setRole(rs.getString("role"));
-                    return u;
-                }
+            ps.setString(2, password); // TODO: hash in production
+            ps.setString(3, email);
+            ps.setString(4, fullName);
+            ps.setString(5, role);
+            ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) { e.printStackTrace(); }
+        return -1;
+    }
+
+    public User authenticateUser(String username, String password) {
+        String sql = "SELECT * FROM User WHERE Username=? AND PasswordHash=?";
+        try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setString(2, password);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                User u = new User();
+                u.setUserID(rs.getInt("UserID"));
+                u.setUsername(rs.getString("Username"));
+                u.setPasswordHash(rs.getString("PasswordHash"));
+                u.setEmail(rs.getString("Email"));
+                u.setFullName(rs.getString("FullName"));
+                u.setRole(rs.getString("Role"));
+                u.setCreatedAt(rs.getTimestamp("CreatedAt"));
+                u.setLastLogin(rs.getTimestamp("LastLogin"));
+                updateLastLogin(u.getUserID());
+                return u;
             }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
 
-    public boolean addUser(User u) {
-        String sql = "INSERT INTO users (username, password_hash, email, full_name, role) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, u.getUsername());
-            ps.setString(2, u.getPasswordHash());
-            ps.setString(3, u.getEmail());
-            ps.setString(4, u.getFullName());
-            ps.setString(5, u.getRole());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean updateLastLogin(String username) {
-        String sql = "UPDATE users SET last_login = NOW() WHERE username = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, username);
+    public void updateLastLogin(int userId) {
+        String sql = "UPDATE User SET LastLogin=CURRENT_TIMESTAMP WHERE UserID=?";
+        try (Connection c = DBConnection.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, userId);
             ps.executeUpdate();
-            return true;
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            return false;
-        }
-    }
-
-    public List<User> getAllUsers() {
-        List<User> out = new ArrayList<>();
-        String sql = "SELECT * FROM users ORDER BY role, username";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                User u = new User();
-                u.setUserId(rs.getInt("user_id"));
-                u.setUsername(rs.getString("username"));
-                u.setPasswordHash(rs.getString("password_hash"));
-                u.setEmail(rs.getString("email"));
-                u.setFullName(rs.getString("full_name"));
-                u.setRole(rs.getString("role"));
-                out.add(u);
-            }
-        } catch (SQLException ex) { ex.printStackTrace(); }
-        return out;
-    }
-
-    public List<User> getUsersByRole(String role) {
-        List<User> out = new ArrayList<>();
-        String sql = "SELECT * FROM users WHERE role = ? ORDER BY username";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, role);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    User u = new User();
-                    u.setUserId(rs.getInt("user_id"));
-                    u.setUsername(rs.getString("username"));
-                    u.setPasswordHash(rs.getString("password_hash"));
-                    u.setEmail(rs.getString("email"));
-                    u.setFullName(rs.getString("full_name"));
-                    u.setRole(rs.getString("role"));
-                    out.add(u);
-                }
-            }
-        } catch (SQLException ex) { ex.printStackTrace(); }
-        return out;
-    }
-
-    public List<User> searchUsers(String keyword) {
-        List<User> out = new ArrayList<>();
-        String sql = "SELECT * FROM users WHERE username LIKE ? OR full_name LIKE ? OR role LIKE ? ORDER BY role, username";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            String k = "%" + keyword + "%";
-            ps.setString(1, k);
-            ps.setString(2, k);
-            ps.setString(3, k);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    User u = new User();
-                    u.setUserId(rs.getInt("user_id"));
-                    u.setUsername(rs.getString("username"));
-                    u.setPasswordHash(rs.getString("password_hash"));
-                    u.setEmail(rs.getString("email"));
-                    u.setFullName(rs.getString("full_name"));
-                    u.setRole(rs.getString("role"));
-                    out.add(u);
-                }
-            }
-        } catch (SQLException ex) { ex.printStackTrace(); }
-        return out;
-    }
-
-    public boolean updateUser(User u) {
-        String sql = "UPDATE users SET password_hash=?, email=?, full_name=?, role=? WHERE username = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, u.getPasswordHash());
-            ps.setString(2, u.getEmail());
-            ps.setString(3, u.getFullName());
-            ps.setString(4, u.getRole());
-            ps.setString(5, u.getUsername());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException ex) { ex.printStackTrace(); return false; }
-    }
-
-    public boolean deleteUser(String username) {
-        String sql = "DELETE FROM users WHERE username = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, username);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException ex) { ex.printStackTrace(); return false; }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 }

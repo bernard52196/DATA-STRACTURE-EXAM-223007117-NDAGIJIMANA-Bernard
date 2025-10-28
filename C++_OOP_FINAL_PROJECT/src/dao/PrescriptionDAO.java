@@ -1,73 +1,100 @@
 package dao;
 
-import db.DatabaseConnection;
 import model.Prescription;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PrescriptionDAO {
 
-    public boolean addPrescription(Prescription p) {
-        String sql = "INSERT INTO prescription (appointment_id, patient_username, doctor_username, medication, dosage, instructions) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, p.getAppointmentId());
-            ps.setString(2, p.getPatientUsername());
-            ps.setString(3, p.getDoctorUsername());
-            ps.setString(4, p.getMedication());
-            ps.setString(5, p.getDosage());
-            ps.setString(6, p.getInstructions());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException ex) { ex.printStackTrace(); return false; }
+    public void add(Prescription p) {
+        String sql = "INSERT INTO Prescription (AppointmentID, Attribute1, Attribute2, Attribute3, CreatedAt) VALUES (?, ?, ?, ?, NOW())";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (p.getAppointmentID() != null)
+                ps.setInt(1, p.getAppointmentID());
+            else
+                ps.setNull(1, Types.INTEGER);
+            ps.setString(2, p.getAttribute1());
+            ps.setString(3, p.getAttribute2());
+            ps.setString(4, p.getAttribute3());
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public List<Prescription> getByPatient(String patientUsername) {
-        List<Prescription> out = new ArrayList<>();
-        String sql = "SELECT * FROM prescription WHERE patient_username = ? ORDER BY issued_at DESC";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, patientUsername);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) out.add(extract(rs));
-            }
-        } catch (SQLException ex) { ex.printStackTrace(); }
-        return out;
+    public void update(Prescription p) {
+        String sql = "UPDATE Prescription SET Attribute1=?, Attribute2=?, Attribute3=? WHERE PrescriptionID=?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, p.getAttribute1());
+            ps.setString(2, p.getAttribute2());
+            ps.setString(3, p.getAttribute3());
+            ps.setInt(4, p.getPrescriptionID());
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public List<Prescription> getByDoctor(String doctorUsername) {
-        List<Prescription> out = new ArrayList<>();
-        String sql = "SELECT * FROM prescription WHERE doctor_username = ? ORDER BY issued_at DESC";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, doctorUsername);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) out.add(extract(rs));
-            }
-        } catch (SQLException ex) { ex.printStackTrace(); }
-        return out;
-    }
-
-    public boolean deletePrescription(int id) {
-        String sql = "DELETE FROM prescription WHERE prescription_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+    public void delete(int id) {
+        String sql = "DELETE FROM Prescription WHERE PrescriptionID=?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException ex) { ex.printStackTrace(); return false; }
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Prescription getById(int id) {
+        String sql = "SELECT * FROM Prescription WHERE PrescriptionID=?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return extract(rs);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<Prescription> getAll() {
+        List<Prescription> list = new ArrayList<>();
+        String sql = "SELECT * FROM Prescription ORDER BY CreatedAt DESC";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(extract(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Prescription> getByAppointmentId(int appointmentId) {
+        List<Prescription> list = new ArrayList<>();
+        String sql = "SELECT * FROM Prescription WHERE AppointmentID=?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, appointmentId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(extract(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     private Prescription extract(ResultSet rs) throws SQLException {
         Prescription p = new Prescription();
-        p.setPrescriptionId(rs.getInt("prescription_id"));
-        p.setAppointmentId(rs.getInt("appointment_id"));
-        p.setPatientUsername(rs.getString("patient_username"));
-        p.setDoctorUsername(rs.getString("doctor_username"));
-        p.setMedication(rs.getString("medication"));
-        p.setDosage(rs.getString("dosage"));
-        p.setInstructions(rs.getString("instructions"));
-        p.setIssuedAt(rs.getTimestamp("issued_at"));
+        p.setPrescriptionID(rs.getInt("PrescriptionID"));
+        p.setAppointmentID(rs.getObject("AppointmentID") != null ? rs.getInt("AppointmentID") : null);
+        p.setAttribute1(rs.getString("Attribute1"));
+        p.setAttribute2(rs.getString("Attribute2"));
+        p.setAttribute3(rs.getString("Attribute3"));
+        p.setCreatedAt(rs.getTimestamp("CreatedAt"));
         return p;
     }
 }

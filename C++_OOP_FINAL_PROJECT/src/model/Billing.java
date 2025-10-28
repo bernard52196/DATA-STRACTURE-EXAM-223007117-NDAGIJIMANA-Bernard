@@ -3,27 +3,26 @@ package model;
 import java.sql.Timestamp;
 
 public class Billing {
-    private Long billingId;
-    private String attribute1;
-    private Double attribute2;
-    private String attribute3;
+    private int billingID;
+    private Integer patientID;
+    private String patientName;
+    private double amount;
+    private String paymentMethod;
+    private Integer medicalRecordID;
     private Timestamp createdAt;
-    private Long patientId;
-    private Long medicalRecordId;
 
-    // Getters and setters
-    public Long getBillingId() { return billingId; }
-    public void setBillingId(Long billingId) { this.billingId = billingId; }
-    public String getAttribute1() { return attribute1; }
-    public void setAttribute1(String attribute1) { this.attribute1 = attribute1; }
-    public Double getAttribute2() { return attribute2; }
-    public void setAttribute2(Double attribute2) { this.attribute2 = attribute2; }
-    public String getAttribute3() { return attribute3; }
-    public void setAttribute3(String attribute3) { this.attribute3 = attribute3; }
+    public int getBillingID() { return billingID; }
+    public void setBillingID(int billingID) { this.billingID = billingID; }
+    public Integer getPatientID() { return patientID; }
+    public void setPatientID(Integer patientID) { this.patientID = patientID; }
+    public String getPatientName() { return patientName; }
+    public void setPatientName(String patientName) { this.patientName = patientName; }
+    public double getAmount() { return amount; }
+    public void setAmount(double amount) { this.amount = amount; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+    public Integer getMedicalRecordID() { return medicalRecordID; }
+    public void setMedicalRecordID(Integer medicalRecordID) { this.medicalRecordID = medicalRecordID; }
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
-    public Long getPatientId() { return patientId; }
-    public void setPatientId(Long patientId) { this.patientId = patientId; }
-    public Long getMedicalRecordId() { return medicalRecordId; }
-    public void setMedicalRecordId(Long medicalRecordId) { this.medicalRecordId = medicalRecordId; }
 }

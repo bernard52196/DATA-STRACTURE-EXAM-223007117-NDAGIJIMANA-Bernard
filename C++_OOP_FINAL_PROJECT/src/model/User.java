@@ -1,25 +1,20 @@
 package model;
 
+import java.sql.Timestamp;
+
 public class User {
-    private int userId;
+    private int userID;
     private String username;
     private String passwordHash;
     private String email;
     private String fullName;
     private String role;
+    private Timestamp createdAt;
+    private Timestamp lastLogin;
 
-    public User() {}
-
-    public User(int userId, String username, String passwordHash, String fullName, String role) {
-        this.userId = userId;
-        this.username = username;
-        this.passwordHash = passwordHash;
-        this.fullName = fullName;
-        this.role = role;
-    }
-
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
+    // getters / setters
+    public int getUserID() { return userID; }
+    public void setUserID(int userID) { this.userID = userID; }
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
     public String getPasswordHash() { return passwordHash; }
@@ -30,4 +25,8 @@ public class User {
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public java.sql.Timestamp getCreatedAt() { return createdAt; }
+    public void setCreatedAt(java.sql.Timestamp createdAt) { this.createdAt = createdAt; }
+    public java.sql.Timestamp getLastLogin() { return lastLogin; }
+    public void setLastLogin(java.sql.Timestamp lastLogin) { this.lastLogin = lastLogin; }
 }
